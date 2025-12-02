@@ -1,0 +1,110 @@
+@startuml
+
+
+package "view" {
+    class MainFrame {
+        - controller : GameController
+        - simulationPanel : SimulationPanel
+        - toolPanel : ToolsPanel
+        
+    }
+    
+    class SimulationPanel {
+        - controller : GameController
+        - cellSize : int
+        # paintComponent(g : Graphics)
+    }
+
+    class ToolsPanel {
+        - controller : GameController
+    }
+    
+    class Settings {
+        - rule : GameOfLifeRule
+    }
+}
+
+package "controller" {
+    class GameController {
+        - grid : Grid
+        - currentRule : SimulationRule
+        - view : SimulationPanel
+        - timer : Timer
+        + nextGeneration()
+        + startSimulation()
+        + stopSimulation()
+    }
+}
+
+package "model" {
+    class Grid {
+        - cells : List<List<CellState>>
+        - width : int
+        - height : int
+        + getCell(x, y) : CellState
+        + setCell(x, y, state)
+        + resize(w, h)
+    }
+
+    interface SimulationRule {
+        + calculateNextState(grid, x, y) : CellState
+    }
+
+    class GameOfLifeRule {
+        - survivalRules : Set<Integer>
+        - birthRules : Set<Integer>
+        + calculateNextState(...)
+    }
+
+    class WireWorldRule {
+        + calculateNextState(...)
+    }
+
+    enum CellState {
+        DEAD
+        ALIVE
+        EMPTY
+        CONDUCTOR
+        HEAD
+        TAIL
+        + isGameOfLife() : boolean
+        + isWireworld() : boolean
+    }
+}
+
+package "persistence" {
+    class FileManager {
+        + saveSimulation(...)
+        + loadSimulation(...) : SimulationState
+    }
+    
+    class SimulationState {
+        + grid : Grid
+        + rule : SimulationRule
+    }
+}
+
+MainFrame --> GameController : uses
+MainFrame --> SimulationPanel : creates
+MainFrame --> ToolsPanel : creates
+MainFrame ..> FileManager : uses
+MainFrame ..> Settings : creates
+
+SimulationPanel --> GameController : notifies
+ToolsPanel --> GameController : notifies
+
+GameController --> Grid : manages
+GameController --> SimulationRule : uses
+GameController --> SimulationPanel : updates
+
+SimulationRule <|.. GameOfLifeRule : implements
+SimulationRule <|.. WireWorldRule : implements
+
+GameOfLifeRule ..> Grid : reads
+WireWorldRule ..> Grid : reads
+
+FileManager ..> SimulationState : creates
+FileManager ..> Grid : saves/loads
+FileManager ..> SimulationRule : saves/loads
+
+@enduml
